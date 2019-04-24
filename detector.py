@@ -3,6 +3,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
+import os
+import argparse
 
 
 def sliding_window(image, window_size, stride):
@@ -69,7 +71,7 @@ def get_iou(box1, box2):
     # compute the IoU
     iou = inter/union
     return iou
-
+ 
 
 def nms(boxes, window_size, max_boxes = 10, iou_threshold = 0.5):
     """
@@ -122,7 +124,7 @@ def plot(image, classified_boxes, window_size):
     :param image: input image as PIL image object 
     :param classified_boxes: list of tuples (x_min <int>, y_min <int>, class prediction <string>, prediction score <float>)
     """
-    fig1 = plt.figure(dpi=200)
+    fig1 = plt.figure(dpi=400)
     ax1 = fig1.add_subplot(1,1,1) 
     ax1.imshow(image, cmap=plt.cm.gray)
     ax1.axis('off')
@@ -134,6 +136,7 @@ def plot(image, classified_boxes, window_size):
         y = [y_max, y_min, y_min, y_max, y_max]
         line, = ax1.plot(x,y,color="red")
         line.set_linewidth(.5)
+    fig1.savefig("classification.png")
     return
 
 
@@ -158,7 +161,13 @@ def classify(crop):
 
 def main():
     # Load the image
-    image = Image.open("./dataset/detection-images/detection-2.jpg")
+    parser = argparse.ArgumentParser()                                               
+    parser.add_argument("--input", "-i", type=str, required=False)
+    link = parser.parse_args().input
+    if link:
+        image = Image.open(link)    
+    else:
+        image = Image.open("./dataset/detection-images/detection-2.jpg")
     # Hyperparameters
     window_size         = (20,20)
     stride              = (1,1)
