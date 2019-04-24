@@ -4,6 +4,22 @@ import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
 
+from preprocessing import load_data
+from preprocessing import histogram_scale
+from preprocessing import background_correction
+from preprocessing import feature_selection
+
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import confusion_matrix
+from sklearn import svm
+
+def correct_class(y_p, y_t):
+    right = 0;
+    for i in range(len(y_t)):
+        if y_t[i] == y_p[i]:
+            right += 1
+    con = confusion_matrix(y_t, y_p)
+    return right/len(y_t), con
 
 def sliding_window(image, window_size, stride):
     """
@@ -100,7 +116,7 @@ def nms(boxes, window_size, max_boxes = 10, iou_threshold = 0.5):
     return boxes
 
 
-def predict(image, boxes, window_size):
+def predict(image, boxes, window_size, clf):
     """
     Predictor, calls the classifier on each found letter.
     :param image: input image as PIL image object
@@ -111,7 +127,7 @@ def predict(image, boxes, window_size):
     classified_boxes = []
     for box in boxes:
         x,y = box[0], box[1]
-        prediction, predict_score = classify(image.crop((x,y,x+window_size[0],y+window_size[1])))
+        prediction, predict_score = classify(image.crop((x,y,x+window_size[0],y+window_size[1])),clf)
         classified_boxes.append((x, y, prediction, predict_score))
     return classified_boxes
 
@@ -139,8 +155,8 @@ def plot(image, classified_boxes, window_size):
 
 ### TODO!!!
 import string
-import random 
-def classify(crop):
+#import random 
+def classify(crop, clf):
     """
     Dummy classifier. Returns random values! Chooses class "0" if all pixels in the window are white.
     :param crop: PIL image, a slice of the input image
@@ -148,15 +164,41 @@ def classify(crop):
     """
     
     # Replace this with an actual classifier!
-    
-    background_color = 255
-    prediction = "0" if np.min(crop)>=background_color else random.choice(string.ascii_lowercase)
-    predict_score = random.random()
+    X = np.resize(np.array(crop),(1,20*20))
+    X = clf[0].transform(X)
+    X = background_correction(X)
+    X = clf[1].transform(X)
+
+    prediction = string.ascii_lowercase[np.round(clf[2].predict(X))[0]]
+    predict_score = 0
+    #background_color = 255
+    #prediction = "0" if np.min(crop)>=background_color else random.choice(string.ascii_lowercase)
+    #predict_score = random.random()
     return prediction, predict_score
 ### TODO!!!
     
+    
+def init_svm():
+    X,Y = load_data()
+    X, tr1 = histogram_scale(X)
+    X = background_correction(X)
+    X, tr2 = feature_selection(X,Y,1)
+    
+    X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.20)
+    
+    # SVM
+    clf_svm = svm.SVC(gamma='scale')
+    clf_svm.fit(X_train, y_train)
+    SVM_y_pred = np.around(clf_svm.predict(X_test))
+    
+    SVM_right, SVM_con = correct_class(SVM_y_pred,y_test)
+    print ('SVM')
+    print('correct classified: ' + str(SVM_right))
+    return [tr1, tr2, clf_svm]
+    
 
 def main():
+    clf = init_svm()
     # Load the image
     image = Image.open("./dataset/detection-images/detection-2.jpg")
     # Hyperparameters
@@ -168,7 +210,7 @@ def main():
     # Ru(i)n everything
     boxes               = scan(image, window_size, stride, detect_score_threshold)
     boxes               = nms(boxes, window_size, max_boxes, iou_threshold)
-    classified_boxes    = predict(image, boxes, window_size)
+    classified_boxes    = predict(image, boxes, window_size, clf)
     plot(image, classified_boxes, window_size)
 
 
