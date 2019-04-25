@@ -27,7 +27,7 @@ def load_data(archiv_name = "dataset/chars74k-lite.zip"):
                     labels.append(string.ascii_lowercase.find(label))
             else:
                 label = fname[-2:-1]
-    print("Load complete.")
+    print("Training dataset loaded.")
     return np.array(data), np.array(labels)
 
 def init_transform(X,Y,switch, p=.9):
@@ -71,7 +71,7 @@ def background_correction(X, p=.9):
     Correction of background color. Leter is darker than background.
     :param X: numpy array with shape [samples,features]
     :param p: percent of edge pixels which value should be bigger than 124
-    :returns: corrected dataset
+    :returns: edited dataset
     """
     X_new = np.empty(X.shape)
     i=0
@@ -91,11 +91,12 @@ def main():
     X1 = data_transform(X,tr1)
     X2 = data_transform(X,tr2)
     print(X.shape,X1.shape,X2.shape)
-    #for i in range(20):
-    #    example=np.resize(X[i],(20,20))
-    #    print(sum(example[0][:] + example[-1][:] + example[1:-1][0] + example[1:-1][-1]),.9*(0.5*76))
-    #    plt.imshow(np.resize(X[i],(20,20)),cmap='Greys')
-    #    plt.show()
+    # Check if the background_correction works
+    for i in range(20):
+        example=np.resize(X[i],(20,20))
+        print(sum(example[0][:] + example[-1][:] + example[1:-1][0] + example[1:-1][-1]),.9*(0.5*76))
+        plt.imshow(np.resize(X1[i],(20,20)),cmap='Greys')
+        plt.show()
 
 if __name__== "__main__":
     main()    

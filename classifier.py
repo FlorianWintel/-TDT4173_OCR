@@ -4,10 +4,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 import string
 
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import confusion_matrix
 from sklearn import svm
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import confusion_matrix
 
 from preprocessing import load_data, init_transform, data_transform
 
@@ -40,28 +42,6 @@ def get_correct_and_cm(y_p, y_t):
             right += 1
     cm = confusion_matrix(y_t, y_p)
     return right/len(y_t), cm
- 
-"""
-    
-def init_knn():
-    
-    
-    # k-NN
-    n_nei = 4
-    neigh = KNeighborsClassifier(n_neighbors=n_nei)
-    neigh.fit(X_train, y_train)
-    kNN_y_pred = neigh.predict(X_test)
-    
-    kNN_right, kNN_con = correct_class(kNN_y_pred, y_test)
-    print ('kNN')
-    print('correct classified: ' + str(kNN_right))
-    #print('confusion matrix: \n' + str(kNN_con))
-    plot_confusion_matrix(y_test, kNN_y_pred, classes=alphabet, cm=kNN_con, title='Confusion matrix, kNN')
-    plt.show()
-    return neigh
-
-"""
-
 
 def classify(crop, clf):
     """
@@ -96,33 +76,86 @@ def predict(image, boxes, window_size, clf):
         classified_boxes.append((x, y, prediction, predict_score))
     return classified_boxes
 
-
-def init_clf():
+def SVM(C=10, gamma='scale'):
     """
-    Initializacion of classifier and data transformation.
+    Initialization of KNN classifier.
+    :param C: penalty parameter C of the error term
+    :param gamma: kernel coefficient 
+    :returns: classifier
+    """
+    clf_svm = svm.SVC(C=C, gamma=gamma, probability=True)
+    
+    return clf_svm
+
+def KNN(n_nei=4):
+    """
+    Initialization of KNN classifier.
+    :param n_nei: number of neighbors
+    :returns: classifier
+    """
+    neigh = KNeighborsClassifier(n_neighbors=n_nei)
+
+    return neigh
+
+def RandomForest_with_AdaBoost():
+    """
+    Initialization of RandomForest with AdaBoost classifier.
+    :returns: classifier
+    """
+    clf_rft = AdaBoostClassifier(RandomForestClassifier(n_estimators=200, max_depth=4))
+    
+    return clf_rft
+
+def Decision_tree_with_AdaBoost():
+    """
+    Initialization of Decision tree with AdaBoost classifier.
+    :returns: classifier
+    """
+    dtc = AdaBoostClassifier(DecisionTreeClassifier(max_depth=4), algorithm="SAMME", n_estimators=200)
+    
+    return dtc
+
+def init_clf(switch=0):
+    """
+    Initialization of classifier and data transformation.
     :returns: list of tuples (data transformation, classifier)
     """
+    if switch==0:
+        name = "SVM"
+        clf = SVM()
+    elif switch==1:
+        name = "KNN"
+        clf = KNN()
+    elif switch==2:
+        name = "RandomForest with AdaBoost"
+        clf = RandomForest_with_AdaBoost()
+    elif switch==3:
+        name = "Decision tree with AdaBoost"
+        clf = Decision_tree_with_AdaBoost()
+    else:
+        assert False, "No so many classifiers"
+        
     X,Y = load_data()
     tr = init_transform(X,Y,1)
     X = data_transform(X,tr)
     
     X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.20)
     
-    # SVM
-    clf_svm = svm.SVC(gamma='scale', probability=True, C=10)
-    clf_svm.fit(X_train, y_train)
-    SVM_y_pred = clf_svm.predict(X_test)
+    print('Training the %s classifier ' %name)
+    clf.fit(X_train, y_train)
+    y_pred = clf.predict(X_test)
     
-    SVM_right, SVM_cm = get_correct_and_cm(SVM_y_pred,y_test)
-    print ('Classifying with SVM')
-    print('Correctly classified: %.2f' %(SVM_right*100))
+    right, cm = get_correct_and_cm(y_pred,y_test)
+    print('Classifying with %s' %name)
+    print('Correctly classified: %.2f%%' %(right*100))
     
-    plot_confusion_matrix(y_test, SVM_y_pred, SVM_cm) 
+    plot_confusion_matrix(y_test, y_pred, cm) 
     
-    return (tr, clf_svm)
+    return (tr, clf)
 
 def main():
-    init_clf()
+    for i in range(4):
+        init_clf(i)
 
 if __name__== "__main__":
     main()

@@ -49,6 +49,7 @@ def main():
     boxes               = scan(image, window_size, stride, detect_score_threshold)
     boxes               = nms(boxes, window_size, max_boxes, iou_threshold)
     classified_boxes    = predict(image, boxes, window_size, clf)
+    print("Detecting and classifying input image")
     plot(image, classified_boxes, window_size)
 
 
