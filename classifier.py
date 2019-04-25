@@ -47,7 +47,7 @@ def init_knn():
     
     
     # k-NN
-    n_nei = 8
+    n_nei = 4
     neigh = KNeighborsClassifier(n_neighbors=n_nei)
     neigh.fit(X_train, y_train)
     kNN_y_pred = neigh.predict(X_test)
