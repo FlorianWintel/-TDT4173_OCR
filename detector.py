@@ -169,11 +169,15 @@ def classify(crop, clf):
     # Replace this with an actual classifier!
     X = np.resize(np.array(crop),(1,20*20))
     X = clf[0].transform(X)
-    X = background_correction(X)
-    X = clf[1].transform(X)
+    #X = background_correction(X)
+    plt.imshow(np.resize(X,(20,20)),cmap='Greys')
+    plt.show()
+    X = clf[1][0].transform(X)
+    X = clf[1][1].transform(X)
 
-    prediction = string.ascii_lowercase[np.round(clf[2].predict(X))[0]]
-    predict_score = 0
+    prediction = string.ascii_lowercase[clf[2].predict(X)[0]]
+    predict_score = np.max(clf[2].predict_proba(X))
+    
     #background_color = 255
     #prediction = "0" if np.min(crop)>=background_color else random.choice(string.ascii_lowercase)
     #predict_score = random.random()
@@ -184,15 +188,15 @@ def classify(crop, clf):
 def init_svm():
     X,Y = load_data()
     X, tr1 = histogram_scale(X)
-    X = background_correction(X)
+    #X = background_correction(X)
     X, tr2 = feature_selection(X,Y,1)
     
     X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.20)
     
     # SVM
-    clf_svm = svm.SVC(gamma='scale')
+    clf_svm = svm.SVC(gamma='scale', probability=True)
     clf_svm.fit(X_train, y_train)
-    SVM_y_pred = np.around(clf_svm.predict(X_test))
+    SVM_y_pred = clf_svm.predict(X_test)
     
     SVM_right, SVM_con = correct_class(SVM_y_pred,y_test)
     print ('SVM')

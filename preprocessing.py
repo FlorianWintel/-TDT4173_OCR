@@ -6,10 +6,9 @@ import zipfile
 import matplotlib.pyplot as plt
 import string
 
-from sklearn.feature_selection import VarianceThreshold
-from sklearn.feature_selection import SelectKBest
-from sklearn.feature_selection import chi2
+from sklearn.feature_selection import VarianceThreshold, SelectPercentile ,chi2
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.decomposition import PCA
 
 def load_data(archiv_name = "dataset/chars74k-lite.zip"):
     """
@@ -59,7 +58,7 @@ def background_correction(X, p=.9):
         i += 1
     return X_new
 
-def feature_selection(X, Y, switch, p=.9, k=300):
+def feature_selection(X, Y, switch, p=.9):
     """
     Feature selection by two methods.
     :param X: numpy array with shape [samples,features]
@@ -72,9 +71,11 @@ def feature_selection(X, Y, switch, p=.9, k=300):
         sel = VarianceThreshold(threshold=(p * (1 - p)))
         X_new = sel.fit_transform(X)
     else:
-        sel = SelectKBest(chi2, k)
+        sel = SelectPercentile(chi2, p)
         X_new = sel.fit_transform(X, Y)
-    return X_new, sel
+    pca = PCA(n_components=100)
+    X_new = pca.fit(X_new).transform(X_new)
+    return X_new, [sel, pca]
 
 def main():
     X,Y = load_data()
