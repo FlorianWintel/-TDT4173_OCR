@@ -91,12 +91,6 @@ def main():
     X1 = data_transform(X,tr1)
     X2 = data_transform(X,tr2)
     print(X.shape,X1.shape,X2.shape)
-    # Check if the background_correction works
-    for i in range(20):
-        example=np.resize(X[i],(20,20))
-        print(sum(example[0][:] + example[-1][:] + example[1:-1][0] + example[1:-1][-1]),.9*(0.5*76))
-        plt.imshow(np.resize(X1[i],(20,20)),cmap='Greys')
-        plt.show()
 
 if __name__== "__main__":
     main()    

@@ -76,7 +76,7 @@ def predict(image, boxes, window_size, clf):
         classified_boxes.append((x, y, prediction, predict_score))
     return classified_boxes
 
-def SVM(C=10, gamma='scale'):
+def SVM(C=1000, gamma='scale'):
     """
     Initialization of KNN classifier.
     :param C: penalty parameter C of the error term
