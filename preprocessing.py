@@ -60,11 +60,10 @@ def background_correction(X, p=.9):
 
 def feature_selection(X, Y, switch, p=.9):
     """
-    Feature selection by two methods.
+    Feature selection by two methods: VarianceThreshold,SelectPercentile. And then use PCA and reduce number on half
     :param X: numpy array with shape [samples,features]
     :param Y: numpy array with shape [samples]
-    :param p: parameter for VarianceThreshold percent of samples to left the feature
-    :param k: parameter for SelectKBest number of returned features
+    :param p: parameter for VarianceThreshold percent of samples to left the feature or for SelectPercentile
     :returns: 
     """
     if switch:
@@ -73,9 +72,9 @@ def feature_selection(X, Y, switch, p=.9):
     else:
         sel = SelectPercentile(chi2, p)
         X_new = sel.fit_transform(X, Y)
-    pca = PCA(n_components=100)
+    pca = PCA(np.uint8(0.5*X_new.shape[1]))
     X_new = pca.fit(X_new).transform(X_new)
-    return X_new, [sel, pca]
+    return X_new, sel, pca
 
 def main():
     X,Y = load_data()

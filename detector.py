@@ -3,17 +3,15 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
-import os
 import argparse
+import string
 
-from preprocessing import load_data
-from preprocessing import histogram_scale
-from preprocessing import background_correction
-from preprocessing import feature_selection
+from preprocessing import load_data, histogram_scale, background_correction, feature_selection
 
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix
 from sklearn import svm
+from sklearn.neighbors import KNeighborsClassifier
 
 def correct_class(y_p, y_t):
     right = 0;
@@ -124,6 +122,7 @@ def predict(image, boxes, window_size, clf):
     :param image: input image as PIL image object
     :param boxes: list of tuples (x_min <int>, y_min <int>, detection score <float>)
     :param window_size: size of the sliding window, tuple of integers (x,y)
+    :param clf: list [tranformation, classifier]
     :returns: list of tuples (x_min <int>, y_min <int>, class prediction <string>, prediction score <float>)
     """
     classified_boxes = []
@@ -154,58 +153,54 @@ def plot(image, classified_boxes, window_size):
         line.set_linewidth(.5)
     fig1.savefig("classification.png")
     return
-
-
-### TODO!!!
-import string
-#import random 
+ 
 def classify(crop, clf):
     """
-    Dummy classifier. Returns random values! Chooses class "0" if all pixels in the window are white.
+    Applies classifier.
     :param crop: PIL image, a slice of the input image
+    :param clf: list [tranformation, classifier]
     :returns: predicted class as string, prediction score as a float
     """
-    
-    # Replace this with an actual classifier!
+    # Apply data tranformation
     X = np.resize(np.array(crop),(1,20*20))
-    X = clf[0].transform(X)
-    #X = background_correction(X)
-    plt.imshow(np.resize(X,(20,20)),cmap='Greys')
-    plt.show()
-    X = clf[1][0].transform(X)
-    X = clf[1][1].transform(X)
+    X = clf[0][0].transform(X)
+    X = background_correction(X)
+    X = clf[0][1].transform(X)
+    X = clf[0][2].transform(X)
 
-    prediction = string.ascii_lowercase[clf[2].predict(X)[0]]
-    predict_score = np.max(clf[2].predict_proba(X))
+    prediction = string.ascii_lowercase[clf[1].predict(X)[0]]
+    predict_score = np.max(clf[1].predict_proba(X))
     
-    #background_color = 255
-    #prediction = "0" if np.min(crop)>=background_color else random.choice(string.ascii_lowercase)
-    #predict_score = random.random()
     return prediction, predict_score
-### TODO!!!
     
     
-def init_svm():
+def init_clf():
+    """
+    Inicializacion of classifier and data transformation.
+    :returns: list which include [data transformation, classifier]
+    """
     X,Y = load_data()
     X, tr1 = histogram_scale(X)
-    #X = background_correction(X)
-    X, tr2 = feature_selection(X,Y,1)
+    X = background_correction(X)
+    X, tr2, tr3 = feature_selection(X,Y,1)
     
     X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.20)
     
     # SVM
-    clf_svm = svm.SVC(gamma='scale', probability=True)
+    clf_svm = svm.SVC(gamma='scale', probability=True, C=10)
     clf_svm.fit(X_train, y_train)
     SVM_y_pred = clf_svm.predict(X_test)
     
     SVM_right, SVM_con = correct_class(SVM_y_pred,y_test)
     print ('SVM')
     print('correct classified: ' + str(SVM_right))
-    return [tr1, tr2, clf_svm]
+    
+    return [[tr1, tr2, tr3], clf_svm]
     
 
 def main():
-    clf = init_svm()
+    # Inicialization of classifier
+    clf = init_clf()
     # Load the image
     parser = argparse.ArgumentParser()                                               
     parser.add_argument("--input", "-i", type=str, required=False)
