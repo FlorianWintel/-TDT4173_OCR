@@ -12,7 +12,8 @@ from sklearn.neighbors import KNeighborsClassifier
 from preprocessing import load_data, histogram_scale, background_correction, feature_selection
 
 
-def plot_confusion_matrix(y_true, y_pred, classes, cm, normalize=False, title=None, cmap=plt.cm.Blues):
+def plot_confusion_matrix(y_true, y_pred, cm, normalize=False, title=None, cmap=plt.cm.Blues):
+    classes = string.ascii_lowercase
     fig, ax = plt.subplots()
     im = ax.imshow(cm, interpolation='nearest', cmap=cmap)
     ax.figure.colorbar(im, ax=ax)
@@ -24,9 +25,9 @@ def plot_confusion_matrix(y_true, y_pred, classes, cm, normalize=False, title=No
            xlabel='Predicted label')
     
     
-def get_accuracy_and_cm(y_p, y_t):
+def get_correct_and_cm(y_p, y_t):
     """
-    Calculates the accuracy and confusion matrix for the given predictions.
+    Calculates the ratio of correct classifications and the confusion matrix for the given predictions.
     :param y_p: float array, predictions
     :param y_t: float array, target
     :returns: 
@@ -35,8 +36,8 @@ def get_accuracy_and_cm(y_p, y_t):
     for i in range(len(y_t)):
         if y_t[i] == y_p[i]:
             right += 1
-    con = confusion_matrix(y_t, y_p)
-    return right/len(y_t), con
+    cm = confusion_matrix(y_t, y_p)
+    return right/len(y_t), cm
  
     
 """
@@ -90,29 +91,6 @@ def classify(crop, clf):
     
     return prediction, predict_score
     
-    
-def init_svm():
-    """
-    Initializacion of svm classifier and data transformation.
-    :returns: list which includes [data transformation, classifier]
-    """
-    X,Y = load_data()
-    X, tr1 = histogram_scale(X)
-    X = background_correction(X)
-    X, tr2, tr3 = feature_selection(X,Y,1)
-    
-    X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.20)
-    
-    # SVM
-    clf_svm = svm.SVC(gamma='scale', probability=True, C=10)
-    clf_svm.fit(X_train, y_train)
-    SVM_y_pred = clf_svm.predict(X_test)
-    
-    SVM_right, SVM_con = get_accuracy_and_cm(SVM_y_pred,y_test)
-    print ('SVM')
-    print('correct classified: ' + str(SVM_right))
-    return [[tr1, tr2, tr3], clf_svm]
-
 
 def predict(image, boxes, window_size, clf):
     """
@@ -129,3 +107,34 @@ def predict(image, boxes, window_size, clf):
         prediction, predict_score = classify(image.crop((x,y,x+window_size[0],y+window_size[1])),clf)
         classified_boxes.append((x, y, prediction, predict_score))
     return classified_boxes
+
+
+def init_svm():
+    """
+    Initializacion of svm classifier and data transformation.
+    :returns: list which includes [data transformation, classifier]
+    """
+    X,Y = load_data()
+    X, tr1 = histogram_scale(X)
+    X = background_correction(X)
+    X, tr2, tr3 = feature_selection(X,Y,1)
+    X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.20)
+    
+    # SVM
+    clf_svm = svm.SVC(gamma='scale', probability=True, C=10)
+    clf_svm.fit(X_train, y_train)
+    SVM_y_pred = clf_svm.predict(X_test)
+    
+    SVM_right, SVM_cm = get_correct_and_cm(SVM_y_pred,y_test)
+    print ('Classifying with SVM')
+    print('Correctly classified: %.2f' %(SVM_right*100))
+    
+    plot_confusion_matrix(y_test, SVM_y_pred, SVM_cm) 
+    
+    return [[tr1, tr2, tr3], clf_svm]
+
+def main():
+    init_svm()
+
+if __name__== "__main__":
+    main()
