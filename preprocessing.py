@@ -80,8 +80,8 @@ def main():
     X,Y = load_data()
     X,_ = histogram_scale(X)
     X_b = background_correction(X)
-    X1,_ = feature_selection(X_b,Y,1)
-    X2,_ = feature_selection(X,Y,0)
+    X1, _, _ = feature_selection(X_b,Y,1)
+    X2, _, _ = feature_selection(X,Y,0)
     print(X.shape,X1.shape,X2.shape)
     for i in range(20):
         example=np.resize(X[i],(20,20))
