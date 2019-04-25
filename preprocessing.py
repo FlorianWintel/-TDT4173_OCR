@@ -29,16 +29,42 @@ def load_data(archiv_name = "dataset/chars74k-lite.zip"):
                 label = fname[-2:-1]
     print("Load complete.")
     return np.array(data), np.array(labels)
-    
-def histogram_scale(X):
+
+def init_transform(X,Y,switch, p=.9):
     """
-    If histogram is narrowed, then is spread.
+    Perform initialization of data transformation on dataset.
     :param X: numpy array with shape [samples,features]
-    :returns: corrected dataset
+    :param Y: numpy array with shape [samples]
+    :returns: list of tuples of transformation (tr1,tr2,tr3)
     """
-    min_max_scaler = MinMaxScaler()
-    X_new = min_max_scaler.fit_transform(np.float64(X))
-    return X_new, min_max_scaler
+    tr1 = MinMaxScaler()
+    X_t=tr1.fit_transform(np.float64(X))
+    
+    if switch:
+        tr2 = VarianceThreshold(threshold=(p * (1 - p)))
+        X_t = tr2.fit_transform(X_t)
+    else:
+        tr2 = SelectPercentile(chi2, 100*p)
+        X_t = tr2.fit_transform(X_t, Y)
+        
+    tr3 = PCA(np.uint8(0.5*X_t.shape[1]))
+    tr3.fit(X_t)
+    return (tr1,tr2,tr3)
+
+def data_transform(X, transform):
+    """
+    Perform data transformation - normalization and feauture reduction
+    :param X: numpy array with shape [samples,features]
+    :param transform: list of tuples of transformation (tr1,tr2,tr3)
+    :returns: transformed data numpy array with shape [samples,features]
+    """
+    # Normalization
+    X_t = transform[0].transform(X)
+    X_t = background_correction(X_t)
+    # Feature reduction
+    X_t = transform[1].transform(X_t)
+    X_t = transform[2].transform(X_t)
+    return X_t
 
 def background_correction(X, p=.9):
     """
@@ -58,36 +84,18 @@ def background_correction(X, p=.9):
         i += 1
     return X_new
 
-def feature_selection(X, Y, switch, p=.9):
-    """
-    Feature selection by two methods: VarianceThreshold,SelectPercentile. And then use PCA and reduce number on half
-    :param X: numpy array with shape [samples,features]
-    :param Y: numpy array with shape [samples]
-    :param p: parameter for VarianceThreshold percent of samples to left the feature or for SelectPercentile
-    :returns: 
-    """
-    if switch:
-        sel = VarianceThreshold(threshold=(p * (1 - p)))
-        X_new = sel.fit_transform(X)
-    else:
-        sel = SelectPercentile(chi2, p)
-        X_new = sel.fit_transform(X, Y)
-    pca = PCA(np.uint8(0.5*X_new.shape[1]))
-    X_new = pca.fit(X_new).transform(X_new)
-    return X_new, sel, pca
-
 def main():
     X,Y = load_data()
-    X,_ = histogram_scale(X)
-    X_b = background_correction(X)
-    X1, _, _ = feature_selection(X_b,Y,1)
-    X2, _, _ = feature_selection(X,Y,0)
+    tr1 = init_transform(X,Y,1)
+    tr2 = init_transform(X,Y,0)
+    X1 = data_transform(X,tr1)
+    X2 = data_transform(X,tr2)
     print(X.shape,X1.shape,X2.shape)
-    for i in range(20):
-        example=np.resize(X[i],(20,20))
-        print(sum(example[0][:] + example[-1][:] + example[1:-1][0] + example[1:-1][-1]),.9*(0.5*76))
-        plt.imshow(np.resize(X_b[i],(20,20)),cmap='Greys')
-        plt.show()
+    #for i in range(20):
+    #    example=np.resize(X[i],(20,20))
+    #    print(sum(example[0][:] + example[-1][:] + example[1:-1][0] + example[1:-1][-1]),.9*(0.5*76))
+    #    plt.imshow(np.resize(X[i],(20,20)),cmap='Greys')
+    #    plt.show()
 
 if __name__== "__main__":
     main()    

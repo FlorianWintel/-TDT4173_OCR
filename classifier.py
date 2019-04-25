@@ -9,7 +9,7 @@ from sklearn.metrics import confusion_matrix
 from sklearn import svm
 from sklearn.neighbors import KNeighborsClassifier
 
-from preprocessing import load_data, histogram_scale, background_correction, feature_selection
+from preprocessing import load_data, init_transform, data_transform
 
 
 def plot_confusion_matrix(y_true, y_pred, cm, normalize=False, title=None, cmap=plt.cm.Blues):
@@ -23,6 +23,8 @@ def plot_confusion_matrix(y_true, y_pred, cm, normalize=False, title=None, cmap=
            title=title,
            ylabel='True label',
            xlabel='Predicted label')
+    plt.show()
+    return
     
     
 def get_correct_and_cm(y_p, y_t):
@@ -39,18 +41,7 @@ def get_correct_and_cm(y_p, y_t):
     cm = confusion_matrix(y_t, y_p)
     return right/len(y_t), cm
  
-    
 """
-
-def init_transformation(X, Y):
-    X,Y = load_data()
-    X, tr1 = histogram_scale(X)
-    X = background_correction(X)
-    X, tr2, tr3 = feature_selection(X,Y,1)
-    
-    X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.20)
-    
-
     
 def init_knn():
     
@@ -76,15 +67,12 @@ def classify(crop, clf):
     """
     Applies classifier.
     :param crop: PIL image, a slice of the input image
-    :param clf: list [tranformation, classifier]
+    :param clf: list (tranformation, classifier)
     :returns: predicted class as string, prediction score as a float
     """
     # Apply data tranformation
     X = np.resize(np.array(crop),(1,20*20))
-    X = clf[0][0].transform(X)
-    X = background_correction(X)
-    X = clf[0][1].transform(X)
-    X = clf[0][2].transform(X)
+    X = data_transform(X,clf[0])
 
     prediction = string.ascii_lowercase[clf[1].predict(X)[0]]
     predict_score = np.max(clf[1].predict_proba(X))
@@ -109,15 +97,15 @@ def predict(image, boxes, window_size, clf):
     return classified_boxes
 
 
-def init_svm():
+def init_clf():
     """
-    Initializacion of svm classifier and data transformation.
-    :returns: list which includes [data transformation, classifier]
+    Initializacion of classifier and data transformation.
+    :returns: list of tuples (data transformation, classifier)
     """
     X,Y = load_data()
-    X, tr1 = histogram_scale(X)
-    X = background_correction(X)
-    X, tr2, tr3 = feature_selection(X,Y,1)
+    tr = init_transform(X,Y,1)
+    X = data_transform(X,tr)
+    
     X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.20)
     
     # SVM
@@ -131,10 +119,10 @@ def init_svm():
     
     plot_confusion_matrix(y_test, SVM_y_pred, SVM_cm) 
     
-    return [[tr1, tr2, tr3], clf_svm]
+    return (tr, clf_svm)
 
 def main():
-    init_svm()
+    init_clf()
 
 if __name__== "__main__":
     main()

@@ -2,7 +2,7 @@ from PIL import Image
 import argparse
 import matplotlib.pyplot as plt
 from detector import scan, nms
-from classifier import predict, init_svm
+from classifier import predict, init_clf
 
 
 def plot(image, classified_boxes, window_size):
@@ -24,12 +24,13 @@ def plot(image, classified_boxes, window_size):
         line, = ax1.plot(x,y,color="red")
         line.set_linewidth(.5)
     fig1.savefig("classification.png")
+    plt.show()
     return
  
 
 def main():
     # Initialization of classifier
-    clf = init_svm()
+    clf = init_clf()
     # Load the image
     parser = argparse.ArgumentParser()                                               
     parser.add_argument("--input", "-i", type=str, required=False)
