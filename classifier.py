@@ -136,7 +136,7 @@ def init_clf(switch=0):
         assert False, "No so many classifiers"
         
     X,Y = load_data()
-    tr = init_transform(X,Y,1)
+    tr = init_transform(X,Y,0)
     X = data_transform(X,tr)
     
     X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.20)

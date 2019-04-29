@@ -30,7 +30,7 @@ def load_data(archiv_name = "dataset/chars74k-lite.zip"):
     print("Training dataset loaded.")
     return np.array(data), np.array(labels)
 
-def init_transform(X,Y,switch, p=.9):
+def init_transform(X,Y,switch, p=.8):
     """
     Perform initialization of data transformation on dataset.
     :param X: numpy array with shape [samples,features]
@@ -86,7 +86,7 @@ def background_correction(X, p=.9):
 
 def main():
     X,Y = load_data()
-    tr1 = init_transform(X,Y,1)
+    tr1 = init_transform(X,Y,1,p=0.9)
     tr2 = init_transform(X,Y,0)
     X1 = data_transform(X,tr1)
     X2 = data_transform(X,tr2)
